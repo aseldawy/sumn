@@ -1,6 +1,17 @@
 package edu.umn.cs.sumn;
 
 public class SuperAccumulator {
+    private static int MANTISSA_BITS = 52;
+    private static long MANTISSA_MASK = 0x000FFFFFFFFFFFFFL;
+    private static int LOW_MANTISSA_BITS = 32;
+    private static long LOW_MANTISSA_MASK = 0x00000000FFFFFFFFL;
+    private static int EXP_BITS = 11;
+    private static int EXP_MASK = 0x7FF;
+    private static int LOW_EXP_BITS = 5;
+    private static int LOW_EXP_MASK = 0x1F;
+    private static int HIGH_EXP_BITS = 6;
+    private static int HIGH_EXP_MASK = 0x3F;
+
     /**
      * The significant bits of all chunks that comprise the value of the
      * accumulator
@@ -19,18 +30,21 @@ public class SuperAccumulator {
      * 
      * @param val
      */
-    public void add(double val) {
-        int exponent = Utils.getExponent(val);
-        long mantissa = Utils.getMantissa(val);
-        if (exponent == 0) {
-            if (mantissa == 0) {
-                // TODO Handle Zero
-                throw new RuntimeException("Cannot handle zero");
-            } else {
-                // TODO Handle Denormalized values - https://en.wikipedia.org/wiki/Denormal_number
-                throw new RuntimeException("Cannot handle denormalized numbeers");
-            }
-        } else if (exponent == 2047) {
+    public void add(double value) {
+        long ivalue = Double.doubleToLongBits(value);
+        long mantissa = ivalue & MANTISSA_MASK;
+        int exp = (int) ((ivalue >> MANTISSA_BITS) & EXP_MASK);
+
+        if (exp != 0 && exp != 2047) {
+            // Normalized value
+            mantissa |= (1L << Utils.MANTISSA_SIZE);
+        } else if (exp == 0) {
+            // Denormalized or zero
+            if (mantissa == 0)
+                return; // Zero
+            exp = 1;
+        } else {
+            // Infinity or NaN
             if (mantissa == 0) {
                 // TODO Handle Infinity
                 throw new RuntimeException("Cannot handle Infinity");
@@ -38,24 +52,19 @@ public class SuperAccumulator {
                 // TODO Handle NaN
                 throw new RuntimeException("Cannot handle NaN");
             }
-        } else {
-            // Handle normal values
-            // The hidden ONE is the most significant bit in the mantissa
-            // which is not explicitly represented in its value
-            int indexOfMostSignificantBit = 53 + exponent; // The hidden ONE
-            int indexOfLeastSignificantBit = exponent; // TODO subtract tailing zeros in mantissa
-            int indexOfMostSignificantChunk = indexOfMostSignificantBit / 32;
-            int indexOfLeastSignificantChunk = indexOfLeastSignificantBit / 32;
+        }
 
-            // Correct the value of mantissa by adding the hidden ONE
-            long trueMantissa = mantissa | (1L << Utils.MANTISSA_SIZE);
-            int chunkToUpdate = indexOfMostSignificantChunk;
-            while (trueMantissa != 0) {
-                int numOfBitsToSkip = 32 * chunkToUpdate - indexOfLeastSignificantBit;
-                chunks[chunkToUpdate] += trueMantissa >> numOfBitsToSkip;
-                trueMantissa &= (0xFFFFFFFFFFFFFFFFL >>> (64 - numOfBitsToSkip));
-                chunkToUpdate--;
-            }
+        int low_exp = exp & LOW_EXP_MASK;
+        int high_exp = exp >> LOW_EXP_BITS;
+        long low_mantissa = (mantissa << low_exp) & LOW_MANTISSA_MASK;
+        long high_mantissa = mantissa >> (LOW_MANTISSA_BITS - low_exp);
+
+        if (ivalue < 0) {
+            chunks[high_exp] -= low_mantissa;
+            chunks[high_exp + 1] -= high_mantissa;
+        } else {
+            chunks[high_exp] += low_mantissa;
+            chunks[high_exp + 1] += high_mantissa;
         }
     }
 
