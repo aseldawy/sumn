@@ -70,33 +70,34 @@ public class SmallSuperAccumulator implements Accumulator {
         long high_mantissa = mantissa >>> (LOW_MANTISSA_BITS - low_exp);
 
         if (ivalue < 0) {
-            chunks[high_exp] -= low_mantissa;
-            chunks[high_exp + 1] -= high_mantissa;
-        } else {
-            // Detect overflow and propagate the carry bit to the higher order mantissa
-            // An overflow happens if the two numbers have the same sign and
-            // their sum has an opposite sign
-            long sum = chunks[high_exp] + low_mantissa;
-            boolean overflow = (chunks[high_exp] ^ low_mantissa) >= 0 && (low_mantissa ^ sum) < 0;
-            int i_exp = high_exp;
-            chunks[i_exp++] = sum;
-            while (overflow && i_exp < chunks.length) {
-                // Notice that due to the 32-bits overlap, the carry bit goes
-                // into the middle of the higher chunk
-                overflow = chunks[i_exp] >>> LOW_MANTISSA_BITS == 0xFFFFFFFFL;
-                chunks[i_exp++] += (1L << 32);
-            }
+            low_mantissa = -low_mantissa;
+            high_mantissa = -high_mantissa;
+        }
+        // Detect overflow and propagate the carry bit to the higher order mantissa
+        // An overflow happens if the two numbers have the same sign and
+        // their sum has an opposite sign
+        long sum = chunks[high_exp] + low_mantissa;
+        boolean overflow = (chunks[high_exp] ^ low_mantissa) >= 0 && (low_mantissa ^ sum) < 0;
+        int i_exp = high_exp;
+        chunks[i_exp++] = sum;
+        while (overflow && i_exp < chunks.length) {
+            // Notice that due to the 32-bits overlap, the carry bit goes
+            // into the middle of the higher chunk
+            overflow = chunks[i_exp] >>> LOW_MANTISSA_BITS == 0xFFFFFFFFL;
+            chunks[i_exp] += chunks[i_exp - 1] < 0 ? (1L << 32) : -(1L << 32);
+            i_exp++;
+        }
 
-            // Add the other half
-            high_exp++;
-            sum = chunks[high_exp] + high_mantissa;
-            overflow = (chunks[high_exp] ^ high_mantissa) >= 0 && (high_mantissa ^ sum) < 0;
-            i_exp = high_exp;
-            chunks[i_exp++] = sum;
-            while (overflow && i_exp < chunks.length) {
-                overflow = chunks[i_exp] >>> LOW_MANTISSA_BITS == 0xFFFFFFFFL;
-                chunks[i_exp++] += (1L << 32);
-            }
+        // Add the other half
+        high_exp++;
+        sum = chunks[high_exp] + high_mantissa;
+        overflow = (chunks[high_exp] ^ high_mantissa) >= 0 && (high_mantissa ^ sum) < 0;
+        i_exp = high_exp;
+        chunks[i_exp++] = sum;
+        while (overflow && i_exp < chunks.length) {
+            overflow = chunks[i_exp] >>> LOW_MANTISSA_BITS == 0xFFFFFFFFL;
+            chunks[i_exp] += chunks[i_exp - 1] < 0 ? (1L << 32) : -(1L << 32);
+            i_exp++;
         }
     }
 

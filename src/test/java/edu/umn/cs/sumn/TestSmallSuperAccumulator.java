@@ -52,4 +52,15 @@ public class TestSmallSuperAccumulator extends TestCase {
         }
         assertEquals(trueSum, accuSum.doubleValue());
     }
+
+    public void testNegative() {
+        double x1 = Utils.build(true, 0, 1023); // -1.0 
+        double trueSum = Utils.build(true, 0, 1023 + 13); // -8192.0
+
+        SmallSuperAccumulator accuSum = new SmallSuperAccumulator();
+        for (int i = 0; i < (1 << 13); i++) {
+            accuSum.add(x1);
+        }
+        assertEquals(trueSum, accuSum.doubleValue());
+    }
 }
