@@ -44,26 +44,24 @@ public class Utils {
      * The returned value is equal to (-1)^sign + mantissa * 2^exponent
      * where value of (sign) is one for negative numbers and zero otherwise.
      * 
-     * @param isNegative
-     * @param mantissa
+     * @param signedMantissa
+     *            The value of mantissa expressed as a signed value
      * @param exponent
      */
-    public static double buildFromTrueValues(boolean isNegative, long mantissa, int exponent) {
-        if (mantissa == 0)
+    public static double buildFromTrueValues(long signedMantissa, int exponent) {
+        if (signedMantissa == 0)
             return 0.0;
+        boolean isNegative = signedMantissa < 0;
+        if (isNegative)
+            signedMantissa = -signedMantissa;
         long mask = 1L << MANTISSA_SIZE;
-        while ((mantissa & mask) == 0) {
-            mantissa <<= 1;
+        while ((signedMantissa & mask) == 0) {
+            signedMantissa <<= 1;
             exponent--;
         }
-        mantissa &= MANTISSA_MASK; // remove the leading one
+        signedMantissa &= MANTISSA_MASK; // remove the leading one
         exponent += 1023 + 52;
-        return build(isNegative, mantissa, exponent);
-    }
-
-    public static void main(String[] args) {
-        System.out.println(String.format("Number %g", build(false, 0, 1023)));
-        System.out.printf("Number %g\n", buildFromTrueValues(false, 15, -3));
+        return build(isNegative, signedMantissa, exponent);
     }
 
 }
