@@ -1,38 +1,62 @@
 package edu.umn.cs.sumn;
 
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
-import org.apfloat.Apfloat;
-import org.apfloat.ApfloatMath;
+import org.apache.spark.SparkConf;
+import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.api.java.function.Function;
+import org.apache.spark.api.java.function.Function2;
 
 /**
  * Hello world!
  */
 public class App {
     public static void main(String[] args) {
-        double x1 = Utils.build(false, 0, 1023); // 1.0
-        double x2 = Utils.build(false, 0, 1023 - 53); // 1.0 / 2^-53
+        Function<String, Double> parser = new Function<String, Double>() {
+            public Double call(String v1) throws Exception {
+                return Double.parseDouble(v1);
+            }
+        };
 
-        double trueSum = x1 + Utils.build(false, 0, 1023 - 53 + 6);
+        JavaSparkContext sc = new JavaSparkContext("local", "SumN");
 
-        double approxSum = x1;
-        Apfloat accuSum = new Apfloat(0);
-        accuSum = accuSum.add(new Apfloat(x1, 1000));
-        for (int i = 0; i < 64; i++) {
-            approxSum += x2;
-            accuSum = accuSum.add(new Apfloat(x2, 1000));
-        }
+        JavaRDD<Double> input = sc.textFile("test.txt").map(parser).cache();
 
-        if (trueSum != approxSum)
-            System.out.println("tozz");
-        if (trueSum != accuSum.doubleValue())
-            System.out.println("tozzen");
+        Function2<SmallSuperAccumulator, Double, SmallSuperAccumulator> ssa1 = new Function2<SmallSuperAccumulator, Double, SmallSuperAccumulator>() {
+            public SmallSuperAccumulator call(SmallSuperAccumulator acc, Double v) throws Exception {
+                acc.add(v);
+                return acc;
+            }
 
+        };
+
+        Function2<SmallSuperAccumulator, SmallSuperAccumulator, SmallSuperAccumulator> ssa2 = new Function2<SmallSuperAccumulator, SmallSuperAccumulator, SmallSuperAccumulator>() {
+            public SmallSuperAccumulator call(SmallSuperAccumulator v1, SmallSuperAccumulator v2) throws Exception {
+                v1.add(v2);
+                return v1;
+            }
+        };
+
+        Function2<Double, Double, Double> simple1 = new Function2<Double, Double, Double>() {
+            public Double call(Double acc, Double v) throws Exception {
+                return acc.doubleValue() + v.doubleValue();
+            }
+        };
+
+        Function2<Double, Double, Double> simple2 = new Function2<Double, Double, Double>() {
+            public Double call(Double v1, Double v2) throws Exception {
+                return v1.doubleValue() + v2.doubleValue();
+            }
+        };
+
+        long t1 = System.currentTimeMillis();
+        Double sumn = input.aggregate(new Double(0), simple1, simple2);
+        long t2 = System.currentTimeMillis();
+        System.out.println("Computed the sum: " + sumn.doubleValue() + " in " + (t2 - t1) / 1000.0 + " seconds");
+
+        t1 = System.currentTimeMillis();
+        SmallSuperAccumulator sumn2 = input.aggregate(new SmallSuperAccumulator(), ssa1, ssa2);
+        t2 = System.currentTimeMillis();
+        System.out.println("Computed the sum: " + sumn2.doubleValue() + " in " + (t2 - t1) / 1000.0 + " seconds");
     }
 
 }

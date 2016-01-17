@@ -28,7 +28,7 @@ public class AppTest extends TestCase {
     }
 
     /**
-     * Rigourous Test :-)
+     * Rigorous Test :-)
      */
     public void testBadPrecision() {
         double x1 = Utils.build(false, 0, 1023); // 1.0

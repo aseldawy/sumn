@@ -18,4 +18,13 @@ public class SimpleSum implements Accumulator {
         return value;
     }
 
+    public void add(Accumulator a) {
+        // Convert the other accumulator to a double-precision value and add it
+        this.value += a.doubleValue();
+    }
+
+    @Override
+    public String toString() {
+        return Double.toString(value);
+    }
 }

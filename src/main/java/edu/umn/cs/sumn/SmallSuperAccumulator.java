@@ -101,6 +101,26 @@ public class SmallSuperAccumulator implements Accumulator {
         }
     }
 
+    public void add(Accumulator a) {
+        if (!(a instanceof SmallSuperAccumulator))
+            throw new RuntimeException("Cannot add accumulator of type: " + a.getClass());
+        SmallSuperAccumulator ssa = (SmallSuperAccumulator) a;
+        for (int i = 0; i < chunks.length; i++) {
+            // Add the two corresponding chunks and propagate the carry flag, as needed
+            long sum = this.chunks[i] + ssa.chunks[i];
+            boolean overflow = (this.chunks[i] ^ ssa.chunks[i]) >= 0 && (this.chunks[i] ^ sum) < 0;
+            int i_exp = i;
+            this.chunks[i_exp++] = sum;
+            while (overflow && i_exp < chunks.length) {
+                // Notice that due to the 32-bits overlap, the carry bit goes
+                // into the middle of the higher chunk
+                overflow = chunks[i_exp] >>> LOW_MANTISSA_BITS == 0xFFFFFFFFL;
+                chunks[i_exp] += chunks[i_exp - 1] < 0 ? (1L << 32) : -(1L << 32);
+                i_exp++;
+            }
+        }
+    }
+
     public double doubleValue() {
         int mostSignificantChunk = chunks.length - 1;
         while (mostSignificantChunk >= 0 && chunks[mostSignificantChunk] == 0)
@@ -128,5 +148,10 @@ public class SmallSuperAccumulator implements Accumulator {
         int e2 = chunk * 32 + 32 - 1023 - 52;
         double x2 = Utils.buildFromTrueValues(m2, e2);
         return x1 + x2;
+    }
+
+    @Override
+    public String toString() {
+        return Double.toString(this.doubleValue());
     }
 }
