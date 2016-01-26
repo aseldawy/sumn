@@ -31,6 +31,13 @@ public class TestSparseSuperAccumulator extends TestCase {
         SparseSuperAccumulator acc = new SparseSuperAccumulator(x1);
         assertEquals(x1, acc.doubleValue());
     }
+    
+    public void testDenormalizedNumbers() {
+      double x1 =  Utils.build(false, 0x400000000L, 0); //  1 * 2^-1040
+      
+      SparseSuperAccumulator acc = new SparseSuperAccumulator(x1);
+      assertEquals(x1, acc.doubleValue());
+    }
 
     /**
      * Rigorous Test :-)

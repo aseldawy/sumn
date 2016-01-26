@@ -5,7 +5,6 @@ import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function2;
 import org.apfloat.Apfloat;
-import org.apfloat.ApfloatMath;
 
 /**
  * Hello world!
