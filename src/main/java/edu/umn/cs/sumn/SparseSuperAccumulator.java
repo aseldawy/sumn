@@ -15,7 +15,7 @@ package edu.umn.cs.sumn;
  * 
  * @author Ahmed Eldawy
  */
-public class SparseSuperAccumulator {
+public class SparseSuperAccumulator implements Accumulator {
     protected static int MANTISSA_BITS = 52;
     protected static long MANTISSA_MASK = 0x000FFFFFFFFFFFFFL;
     protected static int EXP_BITS = 11;
@@ -96,7 +96,10 @@ public class SparseSuperAccumulator {
         }
     }
 
-    public void add(SparseSuperAccumulator acc) {
+    public void add(Accumulator a) {
+        if (!(a instanceof SparseSuperAccumulator))
+          throw new RuntimeException("Cannot add accumulators of type: "+a.getClass());
+        SparseSuperAccumulator acc = (SparseSuperAccumulator) a;
         int[] carries = new int[NUM_DIGITS + 1];
         for (int i = 0; i < NUM_DIGITS; i++) {
             this.digits[i] += acc.digits[i] + carries[i];
