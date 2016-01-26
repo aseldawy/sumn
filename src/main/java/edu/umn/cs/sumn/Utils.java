@@ -50,17 +50,19 @@ public class Utils {
      */
     public static double buildFromTrueValues(long signedMantissa, int exponent) {
         if (signedMantissa == 0)
-            return 0.0;
+          return 0.0;
         boolean isNegative = signedMantissa < 0;
         if (isNegative)
-            signedMantissa = -signedMantissa;
+          signedMantissa = -signedMantissa;
         long mask = 1L << MANTISSA_SIZE;
-        while ((signedMantissa & mask) == 0) {
-            signedMantissa <<= 1;
-            exponent--;
-        }
-        signedMantissa &= MANTISSA_MASK; // remove the leading one
         exponent += 1023 + 52;
+        while (exponent > 0 && (signedMantissa & mask) == 0) {
+          signedMantissa <<= 1;
+          exponent--;
+        }
+        if (exponent == 0)
+          signedMantissa >>= 1; // Denormalized number
+        signedMantissa &= MANTISSA_MASK; // Normalize by removing the leading one
         return build(isNegative, signedMantissa, exponent);
     }
 

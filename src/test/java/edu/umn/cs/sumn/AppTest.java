@@ -46,4 +46,10 @@ public class AppTest extends TestCase {
         assertTrue(trueSum != approxSum);
         assertTrue(trueSum == accuSum.doubleValue());
     }
+    
+    public void testBuildDenormalizedNumber() {
+        double x = Utils.buildFromTrueValues(1, -1040); // 1 * 2^-1040
+        double expectedValue =  Utils.build(false, 0x400000000L, 0);
+        assertEquals(expectedValue, x);
+    }
 }
