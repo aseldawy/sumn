@@ -80,15 +80,12 @@ public class SparseSuperAccumulator implements Accumulator {
             }
         }
 
-        // The value of the lowest bit. Subtract 52 because the decimal point
-        // in floating numbers is between bits 51 and 52.
-        int lowestBit = exp - 52;
         // Store the lowest significant digit
-        int index1 = lowestBit / BITS_PER_DIGIT;
-        digits[index1] = mantissa << (lowestBit % BITS_PER_DIGIT) & DIGIT_MASK;
+        int index1 = exp / BITS_PER_DIGIT;
+        digits[index1] = mantissa << (exp % BITS_PER_DIGIT) & DIGIT_MASK;
 
         int index2 = index1 + 1;
-        digits[index2] = mantissa >> (BITS_PER_DIGIT - lowestBit % BITS_PER_DIGIT);
+        digits[index2] = mantissa >> (BITS_PER_DIGIT - exp % BITS_PER_DIGIT);
 
         if (value < 0) {
             digits[index1] = -digits[index1];
@@ -141,11 +138,11 @@ public class SparseSuperAccumulator implements Accumulator {
         // Get lowest portion of the digit into a double value
         long m1 = digits[iDigit] & 0xFFFFFFFFL; // mantissa value
         int e1 = BITS_PER_DIGIT * iDigit; // exponent (base 2)
-        double x1 = Utils.buildFromTrueValues(m1, e1 - 1023);
+        double x1 = Utils.buildFromTrueValues(m1, e1 - 1023 - 52);
 
         long m2 = digits[iDigit] >> 32; // mantissa value
         int e2 = e1 + 32; // exponent (base 2)
-        double x2 = Utils.buildFromTrueValues(m2, e2 - 1023);
+        double x2 = Utils.buildFromTrueValues(m2, e2 - 1023 - 52);
 
         return x1 + x2;
     }
