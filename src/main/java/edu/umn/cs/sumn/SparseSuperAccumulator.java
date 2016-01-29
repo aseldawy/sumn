@@ -52,6 +52,10 @@ public class SparseSuperAccumulator implements Accumulator {
      */
     protected int[] carries = new int[NUM_DIGITS + 1];
     
+    protected int minDigit = NUM_DIGITS;
+    
+    protected int maxDigit = -1;
+    
     /**
      * Initialize a new SparseSuperAccumulator with a value of zero
      */
@@ -94,11 +98,14 @@ public class SparseSuperAccumulator implements Accumulator {
 
         int index2 = index1 + 1;
         digits[index2] = mantissa >> (BITS_PER_DIGIT - exp % BITS_PER_DIGIT);
+        
 
         if (value < 0) {
             digits[index1] = -digits[index1];
             digits[index2] = -digits[index2];
         }
+        minDigit = index1;
+        maxDigit = index2;
     }
 
     public void add(Accumulator a) {
@@ -158,6 +165,12 @@ public class SparseSuperAccumulator implements Accumulator {
             digit2 = -digit2;
         }
         
+        if (index1 < minDigit)
+          minDigit = index1;
+        
+        if (index2 > maxDigit)
+          maxDigit = index2;
+        
         // Add tempDigits to digits
         Arrays.fill(carries, 0);
         
@@ -182,7 +195,7 @@ public class SparseSuperAccumulator implements Accumulator {
         }
         
         // Add 0 to all remaining digits
-        for (int i = index2 + 1; i < NUM_DIGITS; i++) {
+        for (int i = index2 + 1; i <= maxDigit; i++) {
           if (this.digits[i] >= BASE - 1) {
             carries[i + 1] = 1;
             this.digits[i] -= BASE;
@@ -193,7 +206,7 @@ public class SparseSuperAccumulator implements Accumulator {
         }
         
         // Add carries
-        for (int i = index1; i < NUM_DIGITS; i++) {
+        for (int i = minDigit; i <= maxDigit; i++) {
             this.digits[i] += carries[i];
         }
     }
