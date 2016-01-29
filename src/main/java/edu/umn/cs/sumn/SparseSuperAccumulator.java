@@ -1,5 +1,7 @@
 package edu.umn.cs.sumn;
 
+import java.util.Arrays;
+
 /**
  * An implementation of the sparse super accumulator which represents the value
  * of the superaccumulator as a Generalized Signed Digit (GSD) Float representation.
@@ -44,6 +46,12 @@ public class SparseSuperAccumulator implements Accumulator {
      */
     protected long[] digits = new long[NUM_DIGITS];
 
+    /**
+     * A temporary array for storing carries while adding two numbers. We keep it
+     * as an instance variable to avoid recreating it for every add operation
+     */
+    protected int[] carries = new int[NUM_DIGITS + 1];
+    
     /**
      * Initialize a new SparseSuperAccumulator with a value of zero
      */
@@ -97,9 +105,9 @@ public class SparseSuperAccumulator implements Accumulator {
         if (!(a instanceof SparseSuperAccumulator))
           throw new RuntimeException("Cannot add accumulators of type: "+a.getClass());
         SparseSuperAccumulator acc = (SparseSuperAccumulator) a;
-        int[] carries = new int[NUM_DIGITS + 1];
+        Arrays.fill(carries, 0);
         for (int i = 0; i < NUM_DIGITS; i++) {
-            this.digits[i] += acc.digits[i] + carries[i];
+            this.digits[i] += acc.digits[i];
             if (this.digits[i] >= BASE - 1) {
                 carries[i + 1] = 1;
                 this.digits[i] -= BASE;
@@ -108,11 +116,86 @@ public class SparseSuperAccumulator implements Accumulator {
                 this.digits[i] += BASE;
             }
         }
+        
+        for (int i = 1; i < NUM_DIGITS; i++) {
+            this.digits[i] += carries[i];
+        }
     }
 
-    public void add(double v) {
-        // TODO Make it more efficient by avoiding object creation
-        this.add(new SparseSuperAccumulator(v));
+    public void add(double value) {
+        long ivalue = Double.doubleToLongBits(value);
+        long mantissa = ivalue & MANTISSA_MASK;
+        int exp = (int) ((ivalue >>> MANTISSA_BITS) & EXP_MASK);
+  
+        if (exp != 0 && exp != 2047) {
+            // Normalized value
+            mantissa |= (1L << Utils.MANTISSA_SIZE);
+        } else if (exp == 0) {
+            // Denormalized or zero
+            if (mantissa == 0)
+                return; // Zero
+            exp = 1;
+        } else {
+            // Infinity or NaN
+            if (mantissa == 0) {
+                // TODO Handle Infinity
+                throw new RuntimeException("Cannot handle Infinity");
+            } else {
+                // TODO Handle NaN
+                throw new RuntimeException("Cannot handle NaN");
+            }
+        }
+  
+        // Store the lowest significant digit
+        int index1 = exp / BITS_PER_DIGIT;
+        long digit1 = mantissa << (exp % BITS_PER_DIGIT) & DIGIT_MASK;
+  
+        int index2 = index1 + 1;
+        long digit2 = mantissa >> (BITS_PER_DIGIT - exp % BITS_PER_DIGIT);
+  
+        if (value < 0) {
+            digit1 = -digit1;
+            digit2 = -digit2;
+        }
+        
+        // Add tempDigits to digits
+        Arrays.fill(carries, 0);
+        
+        // Add digit 1
+        this.digits[index1] += digit1;
+        if (this.digits[index1] >= BASE - 1) {
+          carries[index1 + 1] = 1;
+          this.digits[index1] -= BASE;
+        } else if (this.digits[index1] <= -BASE + 1) {
+          carries[index1 + 1] = -1;
+          this.digits[index1] += BASE;
+        }
+        
+        // Add digit 2
+        this.digits[index2] += digit2;
+        if (this.digits[index2] >= BASE - 1) {
+          carries[index2 + 1] = 1;
+          this.digits[index2] -= BASE;
+        } else if (this.digits[index2] <= -BASE + 1) {
+          carries[index2 + 1] = -1;
+          this.digits[index2] += BASE;
+        }
+        
+        // Add 0 to all remaining digits
+        for (int i = index2 + 1; i < NUM_DIGITS; i++) {
+          if (this.digits[i] >= BASE - 1) {
+            carries[i + 1] = 1;
+            this.digits[i] -= BASE;
+          } else if (this.digits[i] <= -BASE + 1) {
+            carries[i + 1] = -1;
+            this.digits[i] += BASE;
+          }
+        }
+        
+        // Add carries
+        for (int i = index1; i < NUM_DIGITS; i++) {
+            this.digits[i] += carries[i];
+        }
     }
 
     public double doubleValue() {
