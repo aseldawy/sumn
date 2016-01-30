@@ -73,7 +73,7 @@ public class App {
 
         JavaSparkContext sc = new JavaSparkContext("local", "SumN");
 
-        JavaRDD<Double> input = sc.textFile("big_file.txt").map(parser).cache();
+        JavaRDD<Double> input = sc.textFile("Data_random.txt").map(parser).cache();
 
         // An initial query to warm up
         Double sumn = input.aggregate(new Double(0), simple1, simple2);
@@ -82,10 +82,10 @@ public class App {
         long t2 = System.currentTimeMillis();
         System.out.println("Computed the inaccurate sum: " + sumn.doubleValue() + " in " + (t2 - t1) / 1000.0 + " seconds");
 
-        t1 = System.currentTimeMillis();
-        Apfloat sumapfloat = input.aggregate(new Apfloat(0), apfloat1, apfloat2);
-        t2 = System.currentTimeMillis();
-        System.out.println("Computed the correct sum using Apfloat: " + sumapfloat.doubleValue() + " in " + (t2 - t1) / 1000.0 + " seconds");
+//        t1 = System.currentTimeMillis();
+//        Apfloat sumapfloat = input.aggregate(new Apfloat(0), apfloat1, apfloat2);
+//        t2 = System.currentTimeMillis();
+//        System.out.println("Computed the correct sum using Apfloat: " + sumapfloat.doubleValue() + " in " + (t2 - t1) / 1000.0 + " seconds");
 
         t1 = System.currentTimeMillis();
         SmallSuperAccumulator sumn2 = input.aggregate(new SmallSuperAccumulator(), small1, small2);
@@ -96,6 +96,8 @@ public class App {
         SparseSuperAccumulator sumn3 = input.aggregate(new SparseSuperAccumulator(), sparse1, sparse2);
         t2 = System.currentTimeMillis();
         System.out.println("Computed the correct sum using SparseSuperAccumulator: " + sumn3.doubleValue() + " in " + (t2 - t1) / 1000.0 + " seconds");
+        
+        sc.close();
     }
 
 }
