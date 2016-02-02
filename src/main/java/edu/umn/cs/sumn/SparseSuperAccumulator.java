@@ -69,7 +69,7 @@ public class SparseSuperAccumulator implements Accumulator {
      * @param v
      */
     public SparseSuperAccumulator(double value) {
-        long ivalue = Double.doubleToLongBits(value);
+        long ivalue = Double.doubleToRawLongBits(value);
         long mantissa = ivalue & MANTISSA_MASK;
         int exp = (int) ((ivalue >>> MANTISSA_BITS) & EXP_MASK);
 
@@ -130,7 +130,7 @@ public class SparseSuperAccumulator implements Accumulator {
     }
 
     public void add(double value) {
-        long ivalue = Double.doubleToLongBits(value);
+        long ivalue = Double.doubleToRawLongBits(value);
         long mantissa = ivalue & MANTISSA_MASK;
         int exp = (int) ((ivalue >>> MANTISSA_BITS) & EXP_MASK);
   
@@ -172,7 +172,7 @@ public class SparseSuperAccumulator implements Accumulator {
           maxDigit = index2;
         
         // Add tempDigits to digits
-        Arrays.fill(carries, 0);
+        Arrays.fill(carries, minDigit, maxDigit+1, 0);
         
         // Add digit 1
         this.digits[index1] += digit1;
