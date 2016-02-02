@@ -63,4 +63,24 @@ public class TestIFastSum extends TestCase {
 
         assertEquals(trueSum, accuSum);
     }
+    
+    public void testSumZero() {
+        long[] ivalues = new long[] { -9223240809135623413L, 131227719152395L,
+            -9219116495164954388L, -9220980306537547756L, -9219819087487567600L,
+            1042213837590335L, 1543112924271844L, 1522897075086126L,
+            -9220037183202067266L, 3552949367208208L, -9221509017254755752L,
+            3334853652708542L, 1863019600020056L, -9219471257886610259L,
+            -9222329823017185473L, -9221849139779689682L, 3900778968165549L,
+            2391730317228052L, 4255541689821420L, -9221828923930503964L,
+        };
+        double[] values = new double[ivalues.length + 1];
+        for (int i = 0; i < ivalues.length; i++) {
+          values[i+1] = Double.longBitsToDouble(ivalues[i]);
+        }
+        
+        double accuSum = new IFastSum().iFastSum(values, values.length - 1);
+        double trueSum = 0;
+        
+        assertEquals(trueSum, accuSum);
+    }
 }

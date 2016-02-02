@@ -242,4 +242,9 @@ public class SparseSuperAccumulator implements Accumulator {
 
         return x1 + x2;
     }
+    
+    @Override
+    public String toString() {
+        return Double.toString(this.doubleValue());
+    }
 }

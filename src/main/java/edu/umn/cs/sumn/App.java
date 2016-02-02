@@ -84,7 +84,6 @@ public class App {
             System.exit(1);
         }
         final String filename = args[0];
-        System.out.println("Input file " + filename);
         long t1, t2;
         Function<String, Double> parser = new Function<String, Double>() {
             public Double call(String v1) throws Exception {
@@ -102,18 +101,19 @@ public class App {
             }
             in.close();
 
-            final double[] numbers = new double[size + 1];
+            final double[] numbers = new double[size];
             in = new BufferedReader(new FileReader(new File(filename)));
             String line;
-            int i = 1;
+            int i = 0;
             while ((line = in.readLine()) != null) {
                 numbers[i++] = parser.call(line);
             }
             in.close();
 
-            System.out.println("Started iFastSum");
+            double[] copyNumbers = new double[numbers.length + 1];
+            System.arraycopy(numbers, 0, copyNumbers, 1, numbers.length);
             t1 = System.currentTimeMillis();
-            double ifsum = new IFastSum().iFastSum(numbers, i - 1);
+            double ifsum = new IFastSum().iFastSum(copyNumbers, i - 1);
             t2 = System.currentTimeMillis();
             System.out.printf("---- Computed the accurate sum %g using iFastSum in %f seconds\n", ifsum,
                     (t2 - t1) / 1000.0);
