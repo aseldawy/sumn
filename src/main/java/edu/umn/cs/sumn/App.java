@@ -84,6 +84,7 @@ public class App {
             System.exit(1);
         }
         final String filename = args[0];
+        System.out.println("Input file " + filename);
         long t1, t2;
         Function<String, Double> parser = new Function<String, Double>() {
             public Double call(String v1) throws Exception {
@@ -114,7 +115,7 @@ public class App {
             t1 = System.currentTimeMillis();
             double ifsum = new IFastSum().iFastSum(numbers, i - 1);
             t2 = System.currentTimeMillis();
-            System.out.printf("---- Computed the accurate sum %g using iFastSum in %f seconds", ifsum,
+            System.out.printf("---- Computed the accurate sum %g using iFastSum in %f seconds\n", ifsum,
                     (t2 - t1) / 1000.0);
 
             // Accumulate using Parallel.forEach
