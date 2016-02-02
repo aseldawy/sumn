@@ -86,7 +86,7 @@ public class Parallel {
       LOG.info("Creating "+parallelism+" threads");
       final int[] partitions = new int[parallelism + 1];
       for (int i_thread = 0; i_thread <= parallelism; i_thread++)
-        partitions[i_thread] = i_thread * (end - start) / parallelism + start;
+        partitions[i_thread] = (int)((long)i_thread * (end - start) / parallelism + start);
       final Vector<RunnableRangeThread<T>> threads = new Vector<RunnableRangeThread<T>>();
       for (int i_thread = 0; i_thread < parallelism; i_thread++) {
         RunnableRangeThread<T> thread = new RunnableRangeThread<T>(r,
