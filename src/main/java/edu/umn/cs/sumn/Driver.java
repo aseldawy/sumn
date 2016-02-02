@@ -18,6 +18,7 @@ import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.api.java.function.PairFunction;
 import org.apfloat.Apfloat;
 
+import edu.umn.cs.sumn.Parallel.RunnableRange;
 import scala.Tuple2;
 
 /**
@@ -106,7 +107,7 @@ public class Driver {
         }
         in.close();
 
-        double[] numbers = new double[size + 1];
+        final double[] numbers = new double[size + 1];
         in = new BufferedReader(new FileReader(new File(filename)));
         String line;
         int i = 1;
@@ -124,6 +125,25 @@ public class Driver {
             System.out.printf("---- Computed the accurate sum %g using iFastSum in %f seconds\n", ifsum,
                     (t2 - t1) / 1000.0);
         }
+        // Accumulate using Parallel.forEach
+        t1 = System.currentTimeMillis();
+        List<SparseSuperAccumulator> accs = Parallel.forEach(numbers.length,
+                new RunnableRange<SparseSuperAccumulator>() {
+                    @Override
+                    public SparseSuperAccumulator run(int i1, int i2) {
+                        SparseSuperAccumulator acc = new SparseSuperAccumulator();
+                        for (int i = i1; i < i2; i++)
+                            acc.add(numbers[i]);
+                        return acc;
+                    }
+                });
+        SparseSuperAccumulator finalResult = new SparseSuperAccumulator();
+        for (SparseSuperAccumulator acc : accs) {
+            finalResult.add(acc);
+        }
+        t2 = System.currentTimeMillis();
+        System.out.printf("---- Computed the accurate sum %g using SparseSuperAccumulator(forEach) in %f seconds\n",
+                finalResult.doubleValue(), (t2 - t1) / 1000.0);
 
         // Accumulate using Spark
         if (args.length <= 1 || args[1].equalsIgnoreCase("spark") || args[1].equalsIgnoreCase("both")) {
@@ -144,7 +164,7 @@ public class Driver {
                 i1 = i2;
             }
 
-            JavaRDD<double[]> input = sc.parallelize(splits);
+            JavaRDD<double[]> input = sc.parallelize(splits).cache();
 
             // An initial query to warm up
             Double sumn = input.aggregate(new Double(0), simple1, simple2);
