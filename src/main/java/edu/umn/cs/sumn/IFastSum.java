@@ -85,12 +85,12 @@ public class IFastSum {
         EPS = Utils.build(EPS < 0, Utils.getMantissa(EPS), Utils.getExponent(EPS) - 53);
 
         double ev_d = .0;
-        ev_d = Double.longBitsToDouble(Double.doubleToLongBits(ev_d) & 0x7FFFFFFFFFFFFFFFL);
+        ev_d = Double.longBitsToDouble(Double.doubleToRawLongBits(ev_d) & 0x7FFFFFFFFFFFFFFFL);
 
         for (i = 1; i <= size; i++) {
             // AddTwo, inline
             t = s + num_list[i];
-            num_list[i] = Utils.getExponent(s) < Utils.getExponent(num_list[i]) ? (num_list[i] - t) + s
+            num_list[i] = (Double.doubleToRawLongBits(s) & EXP_MASK) < (Double.doubleToRawLongBits(num_list[i]) & EXP_MASK) ? (num_list[i] - t) + s
                     : (s - t) + num_list[i];
             s = t;
         }
@@ -105,7 +105,7 @@ public class IFastSum {
             for (i = 1; i <= c_n; i++) {
                 // AddTwo, inline
                 t = s_t + num_list[i];
-                num_list[count] = Utils.getExponent(s_t) < Utils.getExponent(num_list[i]) ? (num_list[i] - t) + s_t
+                num_list[count] = (Double.doubleToRawLongBits(s_t) & EXP_MASK) < (Double.doubleToRawLongBits(num_list[i]) & EXP_MASK) ? (num_list[i] - t) + s_t
                         : (s_t - t) + num_list[i];
                 s_t = t;
 
@@ -120,7 +120,7 @@ public class IFastSum {
             if (max > 0) // neither minimum exponent nor de-normalized 
             {
                 // ev_d.exponent = max;
-                ev_d = Double.longBitsToDouble((Double.doubleToLongBits(ev_d) & ~EXP_MASK) | max << MANTISSA_BITS);
+                ev_d = Double.longBitsToDouble((Double.doubleToRawLongBits(ev_d) & ~EXP_MASK) | max << MANTISSA_BITS);
                 ev_d *= EPS;
                 e_m = ev_d * (count - 1);
             } else

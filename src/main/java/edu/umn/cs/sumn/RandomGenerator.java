@@ -5,11 +5,14 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
 import com.sun.xml.bind.v2.runtime.unmarshaller.XsiNilLoader.Array;
+
+import scala.tools.nsc.GenericRunnerCommand;
 
 public class RandomGenerator {
     private static final long MANTISSA_MASK = 0x000FFFFFFFFFFFFFL;
@@ -17,10 +20,13 @@ public class RandomGenerator {
     private static final int MANTISSA_BITS = 52;
     
     public static void main(String[] args) throws FileNotFoundException {
-        Random random = new Random();
-
-        final int numRecords = 100000000;
-        int delta = 10;
+        final int numRecords = args.length > 0? Integer.parseInt(args[0]) : 100000000;
+        final int delta = args.length > 1? Integer.parseInt(args[1]) : 10;
+        final long seed = args.length > 2 ? Long.parseLong(args[2]) : System.currentTimeMillis();
+        
+        System.out.printf("Using numRecords=%d, delta=%d, seed %d\n", numRecords, delta, seed);
+        
+        Random random = new Random(seed);
 
         // Generate positive numbers only
         PrintWriter out = new PrintWriter(new FileOutputStream(new File("Data_R_1.txt")));
@@ -66,17 +72,18 @@ public class RandomGenerator {
         
         // Real sum equal to zero
         t1 = System.currentTimeMillis();
-        List<Long> vals = new ArrayList<Long>(numRecords);
+        Long[] vals = new Long[numRecords];
         for (int i = 0; i < numRecords / 2; i++) {
           long value = generateValue(random, true, delta);
-          vals.add(value);
-          vals.add(value | 0x8000000000000000L);
+          vals[2*i] = value;
+          vals[2*i+1] = value | 0x8000000000000000L;
         }
         // Shuffle records
         out = new PrintWriter(new FileOutputStream(new File("Data_zero.txt")));
-        Collections.shuffle(vals);
+        List<Long> lvals = Arrays.asList(vals);
+        Collections.shuffle(lvals);
         for (int i = 0; i < numRecords; i++) {
-          out.println(vals.get(i));
+          out.println(vals[i]);
         }
         out.close();
         t2 = System.currentTimeMillis();
