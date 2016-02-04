@@ -1,3 +1,11 @@
+/***********************************************************************
+* Copyright (c) 2015 by Regents of the University of Minnesota.
+* All rights reserved. This program and the accompanying materials
+* are made available under the terms of the Apache License, Version 2.0 which 
+* accompanies this distribution and is available at
+* http://www.opensource.org/licenses/apache2.0.php.
+*
+*************************************************************************/
 package edu.umn.cs.sumn;
 
 import java.util.Arrays;
@@ -51,11 +59,11 @@ public class SparseSuperAccumulator implements Accumulator {
      * as an instance variable to avoid recreating it for every add operation
      */
     protected int[] carries = new int[NUM_DIGITS + 1];
-    
+
     protected int minDigit = NUM_DIGITS;
-    
+
     protected int maxDigit = -1;
-    
+
     /**
      * Initialize a new SparseSuperAccumulator with a value of zero
      */
@@ -98,7 +106,6 @@ public class SparseSuperAccumulator implements Accumulator {
 
         int index2 = index1 + 1;
         digits[index2] = mantissa >> (BITS_PER_DIGIT - exp % BITS_PER_DIGIT);
-        
 
         if (value < 0) {
             digits[index1] = -digits[index1];
@@ -110,7 +117,7 @@ public class SparseSuperAccumulator implements Accumulator {
 
     public void add(Accumulator a) {
         if (!(a instanceof SparseSuperAccumulator))
-          throw new RuntimeException("Cannot add accumulators of type: "+a.getClass());
+            throw new RuntimeException("Cannot add accumulators of type: " + a.getClass());
         SparseSuperAccumulator acc = (SparseSuperAccumulator) a;
         Arrays.fill(carries, 0);
         for (int i = 0; i < NUM_DIGITS; i++) {
@@ -123,7 +130,7 @@ public class SparseSuperAccumulator implements Accumulator {
                 this.digits[i] += BASE;
             }
         }
-        
+
         for (int i = 1; i < NUM_DIGITS; i++) {
             this.digits[i] += carries[i];
         }
@@ -133,7 +140,7 @@ public class SparseSuperAccumulator implements Accumulator {
         long ivalue = Double.doubleToRawLongBits(value);
         long mantissa = ivalue & MANTISSA_MASK;
         int exp = (int) ((ivalue >>> MANTISSA_BITS) & EXP_MASK);
-  
+
         if (exp != 0 && exp != 2047) {
             // Normalized value
             mantissa |= (1L << Utils.MANTISSA_SIZE);
@@ -152,59 +159,59 @@ public class SparseSuperAccumulator implements Accumulator {
                 throw new RuntimeException("Cannot handle NaN");
             }
         }
-  
+
         // Store the lowest significant digit
         int index1 = exp / BITS_PER_DIGIT;
         long digit1 = mantissa << (exp % BITS_PER_DIGIT) & DIGIT_MASK;
-  
+
         int index2 = index1 + 1;
         long digit2 = mantissa >> (BITS_PER_DIGIT - exp % BITS_PER_DIGIT);
-  
+
         if (value < 0) {
             digit1 = -digit1;
             digit2 = -digit2;
         }
-        
+
         if (index1 < minDigit)
-          minDigit = index1;
-        
+            minDigit = index1;
+
         if (index2 > maxDigit)
-          maxDigit = index2;
-        
+            maxDigit = index2;
+
         // Add tempDigits to digits
-        Arrays.fill(carries, minDigit, maxDigit+1, 0);
-        
+        Arrays.fill(carries, minDigit, maxDigit + 1, 0);
+
         // Add digit 1
         this.digits[index1] += digit1;
         if (this.digits[index1] >= BASE - 1) {
-          carries[index1 + 1] = 1;
-          this.digits[index1] -= BASE;
+            carries[index1 + 1] = 1;
+            this.digits[index1] -= BASE;
         } else if (this.digits[index1] <= -BASE + 1) {
-          carries[index1 + 1] = -1;
-          this.digits[index1] += BASE;
+            carries[index1 + 1] = -1;
+            this.digits[index1] += BASE;
         }
-        
+
         // Add digit 2
         this.digits[index2] += digit2;
         if (this.digits[index2] >= BASE - 1) {
-          carries[index2 + 1] = 1;
-          this.digits[index2] -= BASE;
+            carries[index2 + 1] = 1;
+            this.digits[index2] -= BASE;
         } else if (this.digits[index2] <= -BASE + 1) {
-          carries[index2 + 1] = -1;
-          this.digits[index2] += BASE;
+            carries[index2 + 1] = -1;
+            this.digits[index2] += BASE;
         }
-        
+
         // Add 0 to all remaining digits
         for (int i = index2 + 1; i <= maxDigit; i++) {
-          if (this.digits[i] >= BASE - 1) {
-            carries[i + 1] = 1;
-            this.digits[i] -= BASE;
-          } else if (this.digits[i] <= -BASE + 1) {
-            carries[i + 1] = -1;
-            this.digits[i] += BASE;
-          }
+            if (this.digits[i] >= BASE - 1) {
+                carries[i + 1] = 1;
+                this.digits[i] -= BASE;
+            } else if (this.digits[i] <= -BASE + 1) {
+                carries[i + 1] = -1;
+                this.digits[i] += BASE;
+            }
         }
-        
+
         // Add carries
         for (int i = minDigit; i <= maxDigit; i++) {
             this.digits[i] += carries[i];
@@ -242,7 +249,7 @@ public class SparseSuperAccumulator implements Accumulator {
 
         return x1 + x2;
     }
-    
+
     @Override
     public String toString() {
         return Double.toString(this.doubleValue());

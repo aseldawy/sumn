@@ -1,6 +1,11 @@
-/**
- * 
- */
+/***********************************************************************
+* Copyright (c) 2015 by Regents of the University of Minnesota.
+* All rights reserved. This program and the accompanying materials
+* are made available under the terms of the Apache License, Version 2.0 which 
+* accompanies this distribution and is available at
+* http://www.opensource.org/licenses/apache2.0.php.
+*
+*************************************************************************/
 package edu.umn.cs.sumn;
 
 /**
@@ -90,8 +95,8 @@ public class IFastSum {
         for (i = 1; i <= size; i++) {
             // AddTwo, inline
             t = s + num_list[i];
-            num_list[i] = (Double.doubleToRawLongBits(s) & EXP_MASK) < (Double.doubleToRawLongBits(num_list[i]) & EXP_MASK) ? (num_list[i] - t) + s
-                    : (s - t) + num_list[i];
+            num_list[i] = (Double.doubleToRawLongBits(s) & EXP_MASK) < (Double.doubleToRawLongBits(num_list[i])
+                    & EXP_MASK) ? (num_list[i] - t) + s : (s - t) + num_list[i];
             s = t;
         }
 
@@ -105,8 +110,9 @@ public class IFastSum {
             for (i = 1; i <= c_n; i++) {
                 // AddTwo, inline
                 t = s_t + num_list[i];
-                num_list[count] = (Double.doubleToRawLongBits(s_t) & EXP_MASK) < (Double.doubleToRawLongBits(num_list[i]) & EXP_MASK) ? (num_list[i] - t) + s_t
-                        : (s_t - t) + num_list[i];
+                num_list[count] = (Double.doubleToRawLongBits(s_t)
+                        & EXP_MASK) < (Double.doubleToRawLongBits(num_list[i]) & EXP_MASK) ? (num_list[i] - t) + s_t
+                                : (s_t - t) + num_list[i];
                 s_t = t;
 
                 if (num_list[count] != 0) {

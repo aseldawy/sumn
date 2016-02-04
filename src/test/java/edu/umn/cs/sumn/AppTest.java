@@ -1,3 +1,11 @@
+/***********************************************************************
+* Copyright (c) 2015 by Regents of the University of Minnesota.
+* All rights reserved. This program and the accompanying materials
+* are made available under the terms of the Apache License, Version 2.0 which 
+* accompanies this distribution and is available at
+* http://www.opensource.org/licenses/apache2.0.php.
+*
+*************************************************************************/
 package edu.umn.cs.sumn;
 
 import org.apfloat.Apfloat;
@@ -46,10 +54,10 @@ public class AppTest extends TestCase {
         assertTrue(trueSum != approxSum);
         assertTrue(trueSum == accuSum.doubleValue());
     }
-    
+
     public void testBuildDenormalizedNumber() {
         double x = Utils.buildFromTrueValues(1, -1040); // 1 * 2^-1040
-        double expectedValue =  Utils.build(false, 0x400000000L, 0);
+        double expectedValue = Utils.build(false, 0x400000000L, 0);
         assertEquals(expectedValue, x);
     }
 }

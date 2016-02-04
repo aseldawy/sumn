@@ -1,3 +1,11 @@
+/***********************************************************************
+* Copyright (c) 2015 by Regents of the University of Minnesota.
+* All rights reserved. This program and the accompanying materials
+* are made available under the terms of the Apache License, Version 2.0 which 
+* accompanies this distribution and is available at
+* http://www.opensource.org/licenses/apache2.0.php.
+*
+*************************************************************************/
 package edu.umn.cs.sumn;
 
 import java.io.BufferedReader;
@@ -87,10 +95,10 @@ public class App {
                 return Double.longBitsToDouble(Long.parseLong(v1));
             }
         };
-        
+
         int parallel = -1;
         if (args.length > 2)
-          parallel = Integer.parseInt(args[2]);
+            parallel = Integer.parseInt(args[2]);
 
         // Accumulate using iFastSum
         if (args.length > 1 && (args[1].equalsIgnoreCase("ifastsum") || args[1].equalsIgnoreCase("both"))) {
@@ -130,10 +138,9 @@ public class App {
                     return acc;
                 }
             };
-            
-            List<SparseSuperAccumulator> accs = parallel == -1 ?
-                Parallel.forEach(numbers.length, runnable) :
-                  Parallel.forEach(numbers.length, runnable, parallel);
+
+            List<SparseSuperAccumulator> accs = parallel == -1 ? Parallel.forEach(numbers.length, runnable)
+                    : Parallel.forEach(numbers.length, runnable, parallel);
             SparseSuperAccumulator finalResult = new SparseSuperAccumulator();
             for (SparseSuperAccumulator acc : accs) {
                 finalResult.add(acc);
@@ -151,7 +158,7 @@ public class App {
             if (parallel != -1)
                 conf.setMaster(String.format("local[%d]", parallel));
             sc = new JavaSparkContext(conf);
-            
+
             JavaRDD<Double> input = sc.textFile(filename).map(parser).cache();
 
             // An initial query to warm up

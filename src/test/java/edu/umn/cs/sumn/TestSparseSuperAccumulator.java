@@ -1,3 +1,11 @@
+/***********************************************************************
+* Copyright (c) 2015 by Regents of the University of Minnesota.
+* All rights reserved. This program and the accompanying materials
+* are made available under the terms of the Apache License, Version 2.0 which 
+* accompanies this distribution and is available at
+* http://www.opensource.org/licenses/apache2.0.php.
+*
+*************************************************************************/
 package edu.umn.cs.sumn;
 
 import junit.framework.Test;
@@ -31,12 +39,12 @@ public class TestSparseSuperAccumulator extends TestCase {
         SparseSuperAccumulator acc = new SparseSuperAccumulator(x1);
         assertEquals(x1, acc.doubleValue());
     }
-    
+
     public void testDenormalizedNumbers() {
-      double x1 =  Utils.build(false, 0x400000000L, 0); //  1 * 2^-1040
-      
-      SparseSuperAccumulator acc = new SparseSuperAccumulator(x1);
-      assertEquals(x1, acc.doubleValue());
+        double x1 = Utils.build(false, 0x400000000L, 0); //  1 * 2^-1040
+
+        SparseSuperAccumulator acc = new SparseSuperAccumulator(x1);
+        assertEquals(x1, acc.doubleValue());
     }
 
     /**
