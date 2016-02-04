@@ -2,13 +2,10 @@ package edu.umn.cs.sumn;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
@@ -90,6 +87,10 @@ public class App {
                 return Double.longBitsToDouble(Long.parseLong(v1));
             }
         };
+        
+        int parallel = -1;
+        if (args.length > 2)
+          parallel = Integer.parseInt(args[2]);
 
         // Accumulate using iFastSum
         if (args.length > 1 && (args[1].equalsIgnoreCase("ifastsum") || args[1].equalsIgnoreCase("both"))) {
@@ -115,21 +116,24 @@ public class App {
             t1 = System.currentTimeMillis();
             double ifsum = new IFastSum().iFastSum(copyNumbers, i - 1);
             t2 = System.currentTimeMillis();
-            System.out.printf("---- Computed the accurate sum %g using iFastSum in %f seconds\n", ifsum,
-                    (t2 - t1) / 1000.0);
+            //System.out.printf("---- Computed the accurate sum %g using iFastSum in %f seconds\n", ifsum,
+            //        (t2 - t1) / 1000.0);
 
             // Accumulate using Parallel.forEach
             t1 = System.currentTimeMillis();
-            List<SparseSuperAccumulator> accs = Parallel.forEach(numbers.length,
-                    new RunnableRange<SparseSuperAccumulator>() {
-                        @Override
-                        public SparseSuperAccumulator run(int i1, int i2) {
-                            SparseSuperAccumulator acc = new SparseSuperAccumulator();
-                            for (int i = i1; i < i2; i++)
-                                acc.add(numbers[i]);
-                            return acc;
-                        }
-                    });
+            RunnableRange<SparseSuperAccumulator> runnable = new RunnableRange<SparseSuperAccumulator>() {
+                @Override
+                public SparseSuperAccumulator run(int i1, int i2) {
+                    SparseSuperAccumulator acc = new SparseSuperAccumulator();
+                    for (int i = i1; i < i2; i++)
+                        acc.add(numbers[i]);
+                    return acc;
+                }
+            };
+            
+            List<SparseSuperAccumulator> accs = parallel == -1 ?
+                Parallel.forEach(numbers.length, runnable) :
+                  Parallel.forEach(numbers.length, runnable, parallel);
             SparseSuperAccumulator finalResult = new SparseSuperAccumulator();
             for (SparseSuperAccumulator acc : accs) {
                 finalResult.add(acc);
@@ -142,12 +146,12 @@ public class App {
         // Accumulate using Spark
         if (args.length <= 1 || args[1].equalsIgnoreCase("spark") || args[1].equalsIgnoreCase("both")) {
             JavaSparkContext sc;
-            if (args.length > 2 && args[2].equals("-local")) {
-                sc = new JavaSparkContext("local", "SumN");
-            } else {
-                sc = new JavaSparkContext();
-            }
-
+            SparkConf conf = new SparkConf();
+            conf.setAppName("SumN");
+            if (parallel != -1)
+                conf.setMaster(String.format("local[%d]", parallel));
+            sc = new JavaSparkContext(conf);
+            
             JavaRDD<Double> input = sc.textFile(filename).map(parser).cache();
 
             // An initial query to warm up
@@ -155,8 +159,8 @@ public class App {
             t1 = System.currentTimeMillis();
             sumn = input.aggregate(new Double(0), simple1, simple2);
             t2 = System.currentTimeMillis();
-            System.out.println("----- Computed the inaccurate sum: " + sumn.doubleValue() + " in " + (t2 - t1) / 1000.0
-                    + " seconds");
+            //System.out.println("----- Computed the inaccurate sum: " + sumn.doubleValue() + " in " + (t2 - t1) / 1000.0
+            //        + " seconds");
 
             //        t1 = System.currentTimeMillis();
             //        Apfloat sumapfloat = input.aggregate(new Apfloat(0), apfloat1, apfloat2);
