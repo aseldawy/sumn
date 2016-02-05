@@ -23,7 +23,7 @@ public class IFastSum {
     private static int MANTISSA_BITS = 52;
 
     /** Mask for the exponent part */
-    private static int EXP_MASK = 0x7FF;
+    private static long EXP_MASK = 0x7FF0000000000000L;
 
     /** the number of exponents for IEEE754 double */
     protected static final int N_EXPONENT = 2048;
@@ -60,8 +60,8 @@ public class IFastSum {
 
     protected void AddTwo(double[] vals) {
         double t = vals[0] + vals[1];
-        vals[1] = (Utils.getExponent(vals[0]) < Utils.getExponent(vals[1])) ? (vals[1] - t) + vals[0]
-                : (vals[0] - t) + vals[1];
+        vals[1] = (Double.doubleToRawLongBits(vals[0]) & EXP_MASK) < (Double.doubleToRawLongBits(vals[1]) & EXP_MASK) ?
+                ((vals[1] - t) + vals[0]) : ((vals[0] - t) + vals[1]);
         vals[0] = t;
     }
 
@@ -71,7 +71,7 @@ public class IFastSum {
         // for normalized numbers. But if s1 is de-normalized, then according to
         // the two places where Round3 gets called, \hat s_2 must be zero, which
         // means s0 is correctly rounded.
-        long is1 = Double.doubleToLongBits(s1);
+        long is1 = Double.doubleToRawLongBits(s1);
         return (s1 != .0 && (HIGH_MANTISSA_MASK & is1) == 0 && (LOW_MANTISSA_MASK & is1) == 0 && s1 * s2 > 0);
     }
 
@@ -81,13 +81,16 @@ public class IFastSum {
         double s = 0, s_t, s1, s2, e1, e2;
         int count; // next position in num_list to store error
         int c_n = size; // current number of summands
-        int max = 0; // the max exponent of s_t
+        long max = 0; // the max exponent of s_t
         int i;
         double t, e_m;
         double half_ulp = .0; // half an ulp of s
 
         double EPS = 1.0;
-        EPS = Utils.build(EPS < 0, Utils.getMantissa(EPS), Utils.getExponent(EPS) - 53);
+        // EPS.exponents -= 53
+        long iEPS = Double.doubleToRawLongBits(EPS);
+        long exp = iEPS & EXP_MASK - (53 << MANTISSA_BITS); // exp - 53
+        EPS = Double.longBitsToDouble((iEPS & ~EXP_MASK) | exp);
 
         double ev_d = .0;
         ev_d = Double.longBitsToDouble(Double.doubleToRawLongBits(ev_d) & 0x7FFFFFFFFFFFFFFFL);
@@ -95,8 +98,8 @@ public class IFastSum {
         for (i = 1; i <= size; i++) {
             // AddTwo, inline
             t = s + num_list[i];
-            num_list[i] = (Double.doubleToRawLongBits(s) & EXP_MASK) < (Double.doubleToRawLongBits(num_list[i])
-                    & EXP_MASK) ? (num_list[i] - t) + s : (s - t) + num_list[i];
+            num_list[i] = (Double.doubleToRawLongBits(s) & EXP_MASK) < (Double.doubleToRawLongBits(num_list[i]) & EXP_MASK) ?
+                (num_list[i] - t) + s : (s - t) + num_list[i];
             s = t;
         }
 
@@ -110,15 +113,17 @@ public class IFastSum {
             for (i = 1; i <= c_n; i++) {
                 // AddTwo, inline
                 t = s_t + num_list[i];
-                num_list[count] = (Double.doubleToRawLongBits(s_t)
-                        & EXP_MASK) < (Double.doubleToRawLongBits(num_list[i]) & EXP_MASK) ? (num_list[i] - t) + s_t
-                                : (s_t - t) + num_list[i];
+                num_list[count] =
+                    (Double.doubleToRawLongBits(s_t) & EXP_MASK) <
+                    (Double.doubleToRawLongBits(num_list[i]) & EXP_MASK) ?
+                        (num_list[i] - t) + s_t : (s_t - t) + num_list[i];
                 s_t = t;
 
                 if (num_list[count] != 0) {
                     count++;
-                    if (max < Utils.getExponent(s_t))
-                        max = Utils.getExponent(s_t);
+                    long s_t_exp = Double.doubleToRawLongBits(s_t) & EXP_MASK;
+                    if (max < s_t_exp)
+                      max = s_t_exp;
                 }
             }
 
@@ -126,12 +131,15 @@ public class IFastSum {
             if (max > 0) // neither minimum exponent nor de-normalized 
             {
                 // ev_d.exponent = max;
-                ev_d = Double.longBitsToDouble((Double.doubleToRawLongBits(ev_d) & ~EXP_MASK) | max << MANTISSA_BITS);
+                long iev_d = Double.doubleToRawLongBits(ev_d);
+                iev_d = (iev_d & ~EXP_MASK) | max;
+                ev_d = Double.longBitsToDouble(iev_d);
                 ev_d *= EPS;
                 e_m = ev_d * (count - 1);
             } else
                 e_m = .0;
 
+            // AddTwo(s, s_t)
             temp[0] = s;
             temp[1] = s_t;
             AddTwo(temp);
@@ -142,10 +150,11 @@ public class IFastSum {
             c_n = count;
 
             // compute HalfUlp(s)
-            if (Utils.getExponent(s) > 0) {
+            if ((Double.doubleToRawLongBits(s) & EXP_MASK) > 0) {
                 // half_ulp.exponent = s.exponent
-                half_ulp = Double
-                        .longBitsToDouble((Double.doubleToRawLongBits(half_ulp) & ~EXP_MASK) | (Utils.getExponent(s)));
+                long ihalf_ulp = Double.doubleToRawLongBits(half_ulp);
+                ihalf_ulp = (ihalf_ulp & ~EXP_MASK) | (Double.doubleToRawLongBits(s) & EXP_MASK);
+                half_ulp = Double.longBitsToDouble(ihalf_ulp);
                 half_ulp *= EPS;
             } else
                 half_ulp = .0;
@@ -156,20 +165,23 @@ public class IFastSum {
                 s1 = s2 = s_t;
                 e1 = e_m;
                 e2 = -e_m;
+                // AddTwo(s1, e1);
                 temp[0] = s1;
                 temp[1] = e1;
                 AddTwo(temp);
                 s1 = temp[0];
                 e1 = temp[1];
-
+                // AddTwo(s2, e2);
                 temp[0] = s2;
                 temp[1] = e2;
                 AddTwo(temp);
                 s2 = temp[0];
                 e2 = temp[1];
+                
                 if (s + s1 != s || s + s2 != s || Round3(s, s1, e1) || Round3(s, s2, e2)) {
                     r_c = 1;
                     double ss1 = iFastSum(num_list, c_n);
+                    // AddTwo(s, s1);
                     temp[0] = s;
                     temp[1] = ss1;
                     AddTwo(temp);
