@@ -36,7 +36,7 @@ The source code is in Java and can be compiled using [Maven]
 (http://maven.apache.org/). Once you have JDK, and Maven installed, you need
 to type the following command to build the code.
 
-    maven install
+    mvn install
 
 Random Generator
 ================
