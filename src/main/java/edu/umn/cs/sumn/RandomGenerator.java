@@ -12,19 +12,13 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
-import com.sun.xml.bind.v2.runtime.unmarshaller.XsiNilLoader.Array;
-
-import scala.tools.nsc.GenericRunnerCommand;
-
 public class RandomGenerator {
     private static final long MANTISSA_MASK = 0x000FFFFFFFFFFFFFL;
-    private static final int EXP_MASK = 0x7FF;
     private static final int MANTISSA_BITS = 52;
 
     public static void main(String[] args) throws FileNotFoundException {
