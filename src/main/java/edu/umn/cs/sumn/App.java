@@ -14,19 +14,17 @@ import java.io.FileReader;
 import java.util.List;
 
 import org.apache.spark.SparkConf;
-import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function2;
-import org.apache.spark.api.java.function.PairFunction;
 import org.apfloat.Apfloat;
 
 import edu.umn.cs.sumn.Parallel.RunnableRange;
-import scala.Tuple2;
 
 /**
- * Hello world!
+ * A driver application that calls different algorithm to sum a list of floating
+ * point numbers.
  */
 public class App {
     static Function2<Double, Double, Double> simple1 = new Function2<Double, Double, Double>() {
@@ -122,10 +120,10 @@ public class App {
             double[] copyNumbers = new double[numbers.length + 1];
             System.arraycopy(numbers, 0, copyNumbers, 1, numbers.length);
             t1 = System.currentTimeMillis();
-            double ifsum = new IFastSum().iFastSum(copyNumbers, i - 1);
+            double ifsum = new IFastSum().iFastSum(copyNumbers, numbers.length);
             t2 = System.currentTimeMillis();
-            //System.out.printf("---- Computed the accurate sum %g using iFastSum in %f seconds\n", ifsum,
-            //        (t2 - t1) / 1000.0);
+            System.out.printf("---- Computed the accurate sum %g using iFastSum in %f seconds\n", ifsum,
+                    (t2 - t1) / 1000.0);
 
             // Accumulate using Parallel.forEach
             t1 = System.currentTimeMillis();
@@ -166,13 +164,13 @@ public class App {
             t1 = System.currentTimeMillis();
             sumn = input.aggregate(new Double(0), simple1, simple2);
             t2 = System.currentTimeMillis();
-            //System.out.println("----- Computed the inaccurate sum: " + sumn.doubleValue() + " in " + (t2 - t1) / 1000.0
-            //        + " seconds");
+            System.out.println("----- Computed the inaccurate sum: " + sumn.doubleValue() + " in " + (t2 - t1) / 1000.0
+                    + " seconds");
 
-            //        t1 = System.currentTimeMillis();
-            //        Apfloat sumapfloat = input.aggregate(new Apfloat(0), apfloat1, apfloat2);
-            //        t2 = System.currentTimeMillis();
-            //        System.out.println("Computed the correct sum using Apfloat: " + sumapfloat.doubleValue() + " in " + (t2 - t1) / 1000.0 + " seconds");
+            //t1 = System.currentTimeMillis();
+            //Apfloat sumapfloat = input.aggregate(new Apfloat(0), apfloat1, apfloat2);
+            //t2 = System.currentTimeMillis();
+            //System.out.println("Computed the correct sum using Apfloat: " + sumapfloat.doubleValue() + " in " + (t2 - t1) / 1000.0 + " seconds");
 
             t1 = System.currentTimeMillis();
             SmallSuperAccumulator sumn2 = input.aggregate(new SmallSuperAccumulator(), small1, small2);
@@ -186,7 +184,7 @@ public class App {
             System.out.println("----- Computed the correct sum using SparseSuperAccumulator: " + sumn3.doubleValue()
                     + " in " + (t2 - t1) / 1000.0 + " seconds");
 
-            t1 = System.currentTimeMillis();
+            /*t1 = System.currentTimeMillis();
             JavaPairRDD<Integer, Double> partitioned = input.mapToPair(new PairFunction<Double, Integer, Double>() {
                 private static final long serialVersionUID = 1L;
 
@@ -209,7 +207,7 @@ public class App {
                     }, sparse2);
             t2 = System.currentTimeMillis();
             System.out.println("----- Computed the correct sum using SparseSuperAccumulator (partitioned): "
-                    + sumn3.doubleValue() + " in " + (t2 - t1) / 1000.0 + " seconds");
+                    + sumn3.doubleValue() + " in " + (t2 - t1) / 1000.0 + " seconds");*/
             sc.close();
         }
     }
