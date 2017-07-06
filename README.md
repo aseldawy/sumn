@@ -68,6 +68,15 @@ executes the following.
 4. A similar MapReduce implementation that uses small suepraccumulator instead
    of sparse superaccumulator.
 
+Paper
+=====
+
+This code was used in the following paper:
+
+Michael T. Goodrich and Ahmed Eldawy. "Parallel Algorithms for Summing Floating-Point Numbers". In Proceedings of the 28th ACM Symposium on Parallelism in Algorithms and Architectures, ACM SPAA 2016, Asilomar State Beach, CA, July 11 - 13, 2016.
+Available on the author's website at
+http://www.cs.ucr.edu/~eldawy/
+
 Acknowledgement
 ===============
 
